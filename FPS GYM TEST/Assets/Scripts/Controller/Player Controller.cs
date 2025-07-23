@@ -52,9 +52,12 @@ namespace Controller
             Air,
             Crouching,
             Sliding,
-            WallRunning
+            WallRunning,
+            Freeze
         }
 
+        [SerializeField] private bool activeGrapple;
+        [SerializeField] private bool frozen;
         [SerializeField] private bool sliding;
         [SerializeField] private bool wallRunning;
         
@@ -89,6 +92,11 @@ namespace Controller
 
         [Header("Reference")] 
         [SerializeField] private CameraController cameraController;
+
+        [SerializeField] private Grappling grappling;
+
+        [Header("Camera Effect")] [SerializeField]
+        private float grappleFov = 95;
 
         
         #endregion
@@ -131,6 +139,8 @@ namespace Controller
             rb.freezeRotation = true;
 
             startYScale = transform.localScale.y;
+
+            grappling = GetComponent<Grappling>();
         }
 
         private void InitData()
@@ -169,6 +179,11 @@ namespace Controller
 
         private void MovePlayer()
         {
+            if (activeGrapple)
+            {
+                return;
+            }
+            
             moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
             if (OnSlope() && !exitingSlope)
@@ -199,6 +214,11 @@ namespace Controller
 
         private void SpeedControl()
         {
+            if (activeGrapple)
+            {
+                return;
+            }
+            
             Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
             
             if (OnSlope()&& !exitingSlope)
@@ -239,7 +259,7 @@ namespace Controller
 
         private void Drag()
         {
-            if (IsGrounded())
+            if (IsGrounded() && ! activeGrapple)
             {
                 rb.linearDamping = groundDrag;
             }
@@ -264,7 +284,14 @@ namespace Controller
 
         private void StateHandler()
         {
-            if (wallRunning)
+            if (frozen)
+            {
+                currentMovementState = MovementState.Freeze;
+                desiredMoveSpeed = 0;
+                rb.linearVelocity = Vector3.zero;
+            }
+            
+            else if (wallRunning)
             {
                 currentMovementState = MovementState.WallRunning;
                 desiredMoveSpeed = wallRunningSpeed;
@@ -342,6 +369,32 @@ namespace Controller
             }
             moveSpeed = desiredMoveSpeed;
         }
+
+        private Vector3 velocityToSet;
+
+        private bool enableMovementOnNextTouch;
+        public void SetVelocity()
+        {
+            cameraController.DoFov(grappleFov);
+            enableMovementOnNextTouch = true;
+            rb.linearVelocity = velocityToSet;
+        }
+
+        private void OnCollisionEnter(Collision other)
+        {
+            if (enableMovementOnNextTouch)
+            {
+                enableMovementOnNextTouch = false;
+                ResetRestrictions();
+                grappling.StopGrapple();
+            }
+        }
+
+        private void ResetRestrictions()
+        {
+            activeGrapple = false;
+            cameraController.DoFov(80f);
+        }
         
         public bool OnSlope()
         {
@@ -358,6 +411,28 @@ namespace Controller
         {
             return Vector3.ProjectOnPlane(direction, slopeHit.normal);
         }
+        
+        private Vector3 CalculateJumpVelocity(Vector3 startPoint, Vector3 endPoint, float trajectoryHeight)
+        {
+            float gravity = Physics.gravity.y;
+            float displacementY = endPoint.y - startPoint.y;
+            Vector3 displacementXZ = new Vector3(endPoint.x - startPoint.x, 0, endPoint.z - startPoint.z);
+            
+            Vector3 velocityY = Vector3.up * Mathf.Sqrt(-2 * gravity * trajectoryHeight);
+            Vector3 velocityXZ = displacementXZ / (Mathf.Sqrt(-2 * trajectoryHeight / gravity) + Mathf.Sqrt(2 * (displacementY - trajectoryHeight) / gravity));
+
+            return velocityXZ + velocityY;
+        }
+
+        
+        public void JumpToPoint(Vector3 targetPosition, float trajectoryHeight)
+        {
+            SetterBoolActiveGrappling(true);
+            SetVectorVelocityToSet(CalculateJumpVelocity(transform.position, targetPosition, trajectoryHeight));
+            Invoke(nameof(SetVelocity),0.1f);
+            Invoke(nameof(ResetRestrictions),2f);
+        }
+        
         #endregion
 
         #region UI
@@ -393,9 +468,14 @@ namespace Controller
 
         public void SetterBoolSliding(bool _result) => SetterBool(ref sliding, _result);
         public void SetterBoolWallRunning(bool _result) => SetterBool(ref wallRunning, _result);
+
+        public void SetterBoolFreezing(bool _result) => SetterBool(ref frozen, _result);
+        public void SetterBoolActiveGrappling(bool _result) => SetterBool(ref activeGrapple, _result);
         
         public bool GetSliding() => GetterInfo(sliding);
         public bool GetWallRunning() => GetterInfo(wallRunning);
+
+        public bool GetFreezingState() => GetterInfo(frozen);
 
         public MovementState GetMovementState() => GetterInfo(currentMovementState);
 
@@ -408,6 +488,11 @@ namespace Controller
 
         public Rigidbody GetPlayerRigidbody() => GetRigidbody(ref rb);
 
+        public void SetVectorVelocityToSet(Vector3 _vector)
+        {
+            velocityToSet = _vector;
+        }
+        
         #endregion
     }
 }
