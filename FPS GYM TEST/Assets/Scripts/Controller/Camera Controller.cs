@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.Serialization;
 
 namespace Controller
 {
@@ -19,7 +20,7 @@ namespace Controller
         private float xRotation;
         private float yRotation;
 
-        [SerializeField] private Camera camera;
+        [FormerlySerializedAs("camera")] [SerializeField] private Camera cameraPlayer;
 
         [SerializeField] private GameObject cameraSpeedEffect;
         private bool effectSpeed = false;
@@ -69,7 +70,7 @@ namespace Controller
 
         public void DoFov(float endValue)
         {
-            camera.DOFieldOfView(endValue, 0.25f);
+            cameraPlayer.DOFieldOfView(endValue, 0.25f);
         }
 
         public void DoTile(float zTilt)

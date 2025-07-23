@@ -952,7 +952,7 @@ MonoBehaviour:
   sensY: 400
   orientation: {fileID: 497594744}
   camHolder: {fileID: 1706882698}
-  camera: {fileID: 682499114}
+  cameraPlayer: {fileID: 682499114}
   cameraSpeedEffect: {fileID: 1551194027}
 --- !u!1 &698677942
 GameObject:
@@ -1573,7 +1573,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1063584827
 Transform:
   m_ObjectHideFlags: 0
@@ -1738,6 +1738,7 @@ GameObject:
   - component: {fileID: 1145633496}
   - component: {fileID: 1145633497}
   - component: {fileID: 1145633498}
+  - component: {fileID: 1145633499}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -1884,6 +1885,23 @@ MonoBehaviour:
   exitWallTime: 0.2
   useGravity: 1
   gravityCounterForce: 1
+--- !u!114 &1145633499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145633493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a9bcea6774a8b64a8cc1834c0eb78b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fpsCam: {fileID: 682499114}
+  gravityStrengthMax: 30
+  maxDistanceForSpeel: 3
+  playerController: {fileID: 1145633496}
+  playerTransform: {fileID: 1145633495}
 --- !u!1001 &1187937482
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2489,8 +2507,8 @@ ParticleSystem:
     startColor:
       serializedVersion: 2
       minMaxState: 2
-      minColor: {r: 0.46226418, g: 0.0021804967, b: 0.0021804967, a: 0.3882353}
-      maxColor: {r: 0.8490566, g: 0.35644355, b: 0.35644355, a: 0.48235294}
+      minColor: {r: 0.8113208, g: 0.8113208, b: 0.8113208, a: 0.3882353}
+      maxColor: {r: 1, g: 1, b: 1, a: 0.48235294}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}

@@ -401,6 +401,13 @@ namespace Controller
 
         public Transform GetOrientation() => GetterInfo(orientation);
 
+        private Rigidbody GetRigidbody(ref Rigidbody _rigidbody)
+        {
+            return _rigidbody;
+        }
+
+        public Rigidbody GetPlayerRigidbody() => GetRigidbody(ref rb);
+
         #endregion
     }
 }
