@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem; 
 
 namespace Controller
 {
@@ -20,8 +21,6 @@ namespace Controller
         [Header("Input")] 
         private float horizontalInput;
         private float verticalInput;
-        [SerializeField] private KeyCode upwardsRunKey = KeyCode.LeftShift;
-        [SerializeField] private KeyCode downwardsRunKey = KeyCode.LeftControl;
         private bool upwardRunning;
         private bool downwardRunning;
         [SerializeField] private KeyCode jumpKey = KeyCode.Space;
@@ -49,12 +48,41 @@ namespace Controller
         [SerializeField] private bool useGravity;
 
         [SerializeField] private float gravityCounterForce;
-        
-        
+
+        private PlayerInputActions inputActions;
+        private Vector2 moveInput;
+        private bool jumpPressed;
         
         #endregion
 
         #region Unity Methods
+
+        private void Awake() 
+        {
+            inputActions = new PlayerInputActions();
+        }
+
+        private void OnEnable() 
+        {
+            inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+            inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+            
+            inputActions.Player.Jump.performed += ctx => jumpPressed = true;
+            inputActions.Player.Jump.canceled += ctx => jumpPressed = false;
+            
+            inputActions.Player.Sprint.performed += ctx => upwardRunning = true;
+            inputActions.Player.Sprint.canceled += ctx => upwardRunning = false;
+            
+            inputActions.Player.Slide.performed += ctx => downwardRunning = true;
+            inputActions.Player.Slide.canceled += ctx => downwardRunning = false;
+            
+            inputActions.Enable();
+        }
+
+        private void OnDisable() 
+        {
+            inputActions.Disable();
+        }
 
         private void Start()
         {
@@ -122,7 +150,7 @@ namespace Controller
                     exitWallTimer = exitWallTime;
                 }
                 
-                if (Input.GetKeyDown(jumpKey))
+                if (jumpPressed)
                 {
                     WallJump();
                 }
@@ -156,11 +184,8 @@ namespace Controller
 
         private void InputWallRunning()
         {
-            horizontalInput = Input.GetAxisRaw("Horizontal");
-            verticalInput = Input.GetAxisRaw("Vertical");
-
-            upwardRunning = Input.GetKey(upwardsRunKey);
-            downwardRunning = Input.GetKey(downwardsRunKey);
+            horizontalInput = moveInput.x;
+            verticalInput = moveInput.y;
         }
 
         private void StartWallRunning()

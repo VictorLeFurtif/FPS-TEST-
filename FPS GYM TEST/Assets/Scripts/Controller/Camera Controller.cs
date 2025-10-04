@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.InputSystem; 
 using UnityEngine.Serialization;
 
 namespace Controller
@@ -25,9 +26,29 @@ namespace Controller
         [SerializeField] private GameObject cameraSpeedEffect;
         private bool effectSpeed = false;
 
+        private PlayerInputActions inputActions;
+        private Vector2 lookInput;
+
         #endregion
 
         #region Unity Methods
+
+        private void Awake() 
+        {
+            inputActions = new PlayerInputActions();
+        }
+
+        private void OnEnable() 
+        {
+            inputActions.Player.Look.performed += ctx => lookInput = ctx.ReadValue<Vector2>();
+            inputActions.Player.Look.canceled += ctx => lookInput = Vector2.zero;
+            inputActions.Enable();
+        }
+
+        private void OnDisable() 
+        {
+            inputActions.Disable();
+        }
 
         private void Start()
         {
@@ -56,8 +77,8 @@ namespace Controller
 
         private void MouseController()
         {
-            float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensX;
-            float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sensY;
+            float mouseX = lookInput.x * Time.deltaTime * sensX;
+            float mouseY = lookInput.y * Time.deltaTime * sensY;
             
             yRotation += mouseX;
 

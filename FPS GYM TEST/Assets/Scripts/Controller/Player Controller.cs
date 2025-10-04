@@ -79,12 +79,7 @@ namespace Controller
         [SerializeField] private LayerMask groundLayer;
 
         private bool grounded;
-
-        [Header("Keybinds")] 
-        [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-        [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
-        [SerializeField] private KeyCode crouchKey = KeyCode.C;
-
+        
         [Header("Slope Handling")] 
         [SerializeField] private float maxSlopeAngle;
         private RaycastHit slopeHit;
@@ -98,10 +93,42 @@ namespace Controller
         [Header("Camera Effect")] [SerializeField]
         private float grappleFov = 95;
 
-        
+        private PlayerInputActions inputActions;
+        private Vector2 moveInput;
+        private bool jumpPressed;
+        private bool sprintHeld;
+        private bool crouchHeld;
+
         #endregion
 
         #region Unity Method
+
+        private void Awake() 
+        {
+            inputActions = new PlayerInputActions();
+        }
+
+        private void OnEnable() 
+        {
+            inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+            inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+            
+            inputActions.Player.Jump.performed += ctx => jumpPressed = true;
+            inputActions.Player.Jump.canceled += ctx => jumpPressed = false;
+            
+            inputActions.Player.Sprint.performed += ctx => sprintHeld = true;
+            inputActions.Player.Sprint.canceled += ctx => sprintHeld = false;
+            
+            inputActions.Player.Crouch.performed += ctx => OnCrouchPressed();
+            inputActions.Player.Crouch.canceled += ctx => OnCrouchReleased();
+            
+            inputActions.Enable();
+        }
+
+        private void OnDisable() 
+        {
+            inputActions.Disable();
+        }
 
         void Start()
         {
@@ -154,27 +181,29 @@ namespace Controller
 
         private void MyInput()
         {
-            horizontalInput = Input.GetAxisRaw("Horizontal");
-            verticalInput = Input.GetAxisRaw("Vertical");
+            horizontalInput = moveInput.x;
+            verticalInput = moveInput.y;
 
-            if (Input.GetKey(jumpKey) && readyToJump && grounded && currentMovementState != MovementState.Crouching)
+            if (jumpPressed && readyToJump && grounded && currentMovementState != MovementState.Crouching)
             {
                 readyToJump = false;
                 
                 Jump();
                 Invoke(nameof(ResetJump),jumpCooldown);
             }
+        }
 
-            if (Input.GetKeyDown(crouchKey))
-            {
-                transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
-                rb.AddForce(Vector3.down * 5f, ForceMode.Impulse); //push player after crouching 
-            }
+        private void OnCrouchPressed()
+        {
+            crouchHeld = true;
+            transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
+            rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
+        }
 
-            if (Input.GetKeyUp(crouchKey))
-            {
-                transform.localScale = new Vector3(transform.localScale.x,startYScale, transform.localScale.z);
-            }
+        private void OnCrouchReleased()
+        {
+            crouchHeld = false;
+            transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
         }
 
         private void MovePlayer()
@@ -308,13 +337,13 @@ namespace Controller
                     desiredMoveSpeed = finalData.sprintSpeed;
             }
 
-            else if (Input.GetKey(crouchKey))
+            else if (crouchHeld)
             {
                 currentMovementState = MovementState.Crouching;
                 desiredMoveSpeed = crouchSpeed;
             }
 
-            else if(grounded && Input.GetKey(sprintKey))
+            else if(grounded && sprintHeld)
             {
                 currentMovementState = MovementState.Sprinting;
                 desiredMoveSpeed = finalData.sprintSpeed;
